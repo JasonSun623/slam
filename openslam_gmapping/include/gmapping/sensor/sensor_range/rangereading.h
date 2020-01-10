@@ -14,7 +14,17 @@ class RangeReading: public SensorReading, public std::vector<double>{
 		virtual ~RangeReading();
 		inline const OrientedPoint& getPose() const {return m_pose;}
 		inline void setPose(const OrientedPoint& pose) {m_pose=pose;}
+
+		/**
+		 * @brief  Copy the scanned data into an array
+		 * 
+		 * @param v 
+		 * @param density Filtering parameter. 
+		 * If the distance between the points detected by several adjacent scan data is less than this parameter, a large value is assigned.
+		 * @return unsigned int 
+		 */
 		unsigned int rawView(double* v, double density=0.) const;
+
 		std::vector<Point> cartesianForm(double maxRange=1e6) const;
 		unsigned int activeBeams(double density=0.) const;
 	protected:

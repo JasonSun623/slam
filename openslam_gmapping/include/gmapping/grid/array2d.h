@@ -9,7 +9,8 @@
 
 namespace GMapping {
 
-template<class Cell, const bool debug=false> class Array2D{
+template<class Cell, const bool debug=false> 
+class Array2D{
 	public:
 		Array2D(int xsize=0, int ysize=0);
 		Array2D& operator=(const Array2D &);
@@ -34,9 +35,10 @@ template<class Cell, const bool debug=false> class Array2D{
 		inline int getXSize() const {return m_xsize;}
 		inline int getYSize() const {return m_ysize;}
 		inline Cell** cells() {return m_cells;}
-		Cell ** m_cells;
+
+		Cell ** m_cells; // where data is actually stored
 	protected:
-		int m_xsize, m_ysize;
+		int m_xsize, m_ysize; // size of array
 };
 
 
@@ -47,9 +49,9 @@ Array2D<Cell,debug>::Array2D(int xsize, int ysize){
 	m_xsize=xsize;
 	m_ysize=ysize;
 	if (m_xsize>0 && m_ysize>0){
-		m_cells=new Cell*[m_xsize];
+		m_cells = new Cell*[m_xsize]; // allocate new array of pointer to another cell array
 		for (int i=0; i<m_xsize; i++)
-			m_cells[i]=new Cell[m_ysize];
+			m_cells[i] = new Cell[m_ysize]; // allocate cell for each row
 	}
 	else{
 		m_xsize=m_ysize=0;

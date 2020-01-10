@@ -12,24 +12,53 @@ The cells have to define (int) constructor;
 */
 typedef Array2D<double> DoubleArray2D;
 
+/**
+ * @brief 
+ * 
+ * @tparam Cell 
+ * @tparam Storage 
+ * @tparam isClass=true 
+ */
 template <class Cell, class Storage, const bool isClass=true> 
 class Map{
 	public:
+		// Map initialization
 		Map(int mapSizeX, int mapSizeY, double delta);
 		Map(const Point& center, double worldSizeX, double worldSizeY, double delta);
 		Map(const Point& center, double xmin, double ymin, double xmax, double ymax, double delta);
+
 		/* the standard implementation works filen in this case*/
-		//Map(const Map& g);
-		//Map& operator =(const Map& g);
+		// Map(const Map& g);
+		// Map& operator =(const Map& g);
+
+		// Map utility functions
+		// (xmin, ymin) is lower left conrner
+		// (xmax, ymax) is upper right corner 
+		// of the map are described using the physical world coordinates
 		void resize(double xmin, double ymin, double xmax, double ymax);
 		void grow(double xmin, double ymin, double xmax, double ymax);
+
+		/**
+		 * @brief mapping function from world to map
+		 * 
+		 * @param p point in world. Must be a double point
+		 * @return IntPoint point in map. Must be an Int point
+		 */
 		inline IntPoint world2map(const Point& p) const;
+
+		/**
+		 * @brief mapping function from map to world
+		 * 
+		 * @param p  point in map. Must be an Int point
+		 * @return Point point in world. Must de a double point
+		 */
 		inline Point map2world(const IntPoint& p) const;
 		inline IntPoint world2map(double x, double y) const 
 		  { return world2map(Point(x,y)); }
 		inline Point map2world(int x, int y) const 
 		  { return map2world(IntPoint(x,y)); }
 
+		// Map utility function
 		inline Point getCenter() const {return m_center;}	
 		inline double getWorldSizeX() const {return m_worldSizeX;}
 		inline double getWorldSizeY() const {return m_worldSizeY;}
@@ -43,25 +72,27 @@ class Map{
 			xmin=min.x, ymin=min.y,  xmax=max.x, ymax=max.y; 
 		}
 		
+		// Cell access function with map point
+		inline const Cell& cell(const IntPoint& p) const;
+		inline Cell& cell(const IntPoint& p);
 		inline Cell& cell(int x, int y) {
 		  return cell(IntPoint(x, y));
 		}
-		inline Cell& cell(const IntPoint& p);
-
 		inline const Cell& cell(int x, int y) const  {
 		  return cell(IntPoint(x, y));
 		}
-		inline const Cell& cell(const IntPoint& p) const;
 
-		inline Cell& cell(double x, double y) {
-		  return cell(Point(x, y));
-		}
+		// Cell access function with world point
+		inline const Cell& cell(const Point& p) const;
 		inline Cell& cell(const Point& p);
-
 		inline const Cell& cell(double x, double y) const {
 		  return cell(Point(x, y));
 		}
-
+		inline Cell& cell(double x, double y) {
+		  return cell(Point(x, y));
+		}
+		
+		// Cell inside function
 		inline bool isInside(int x, int y) const {
 		  return m_storage.cellState(IntPoint(x,y))&Inside;
 		}
@@ -76,20 +107,30 @@ class Map{
 		  return m_storage.cellState(world2map(p))&Inside;
 		}
 
-		inline const Cell& cell(const Point& p) const;
-
 		inline Storage& storage() { return m_storage; }
 		inline const Storage& storage() const { return m_storage; }
+
 		DoubleArray2D* toDoubleArray() const;
-	        Map<double, DoubleArray2D, false>* toDoubleMap() const;
+	    Map<double, DoubleArray2D, false>* toDoubleMap() const;
 		
 	protected:
-		Point m_center;
-		double m_worldSizeX, m_worldSizeY, m_delta;
-		Storage m_storage;
-		int m_mapSizeX, m_mapSizeY;
-		int m_sizeX2, m_sizeY2;
-	static const Cell m_unknown;
+
+		Storage m_storage; 					// the object used to store map data
+	
+		Point m_center;						// center position of the map in physical world
+		double m_worldSizeX, m_worldSizeY; 	// physical world size
+		double m_delta; 					// map's scaling relationship
+	
+		// Size of the raster map: 
+		//		m_worldSizeX = m_mapSizeX ∗ m_delta
+		//		m_worldSizeY = m_mapSizeY ∗ m_delta
+		int m_mapSizeX, m_mapSizeY; 		
+		
+		// m_sizeX2 = m_mapSizeX/2
+		// m_sizeY2 = m_mapSizeY/2
+ 		int m_sizeX2, m_sizeY2;
+
+		static const Cell m_unknown;
 };
 
 typedef Map<double, DoubleArray2D, false> DoubleMap;
@@ -177,13 +218,15 @@ void Map<Cell,Storage,isClass>::grow(double xmin, double ymin, double xmax, doub
 
 template <class Cell, class Storage, const bool isClass>
 IntPoint Map<Cell,Storage,isClass>::world2map(const Point& p) const{
-	return IntPoint( (int)round((p.x-m_center.x)/m_delta)+m_sizeX2, (int)round((p.y-m_center.y)/m_delta)+m_sizeY2);
+	return IntPoint( 	(int)round((p.x-m_center.x)/m_delta)+m_sizeX2,
+						(int)round((p.y-m_center.y)/m_delta)+m_sizeY2);
 }
 
 template <class Cell, class Storage, const bool isClass>
 Point Map<Cell,Storage,isClass>::map2world(const IntPoint& p) const{
-	return Point( (p.x-m_sizeX2)*m_delta,
-		      (p.y-m_sizeY2)*m_delta)+m_center;
+	return Point( 	(p.x-m_sizeX2)*m_delta,
+		      		(p.y-m_sizeY2)*m_delta)
+			+ m_center;
 }
 
 
@@ -212,29 +255,29 @@ Cell& Map<Cell,Storage,isClass>::cell(const Point& p) {
 }
 
 template <class Cell, class Storage, const bool isClass>
-  const Cell& Map<Cell,Storage,isClass>::cell(const IntPoint& p) const {
-  AccessibilityState s=m_storage.cellState(p);
-  //if (! s&Inside) assert(0);
-  if (s&Allocated)	 
-    return m_storage.cell(p);
-  return m_unknown;
+const Cell& Map<Cell,Storage,isClass>::cell(const IntPoint& p) const {
+	AccessibilityState s=m_storage.cellState(p);
+	//if (! s&Inside) assert(0);
+	if (s&Allocated)	 
+		return m_storage.cell(p);
+	return m_unknown;
 }
 
 template <class Cell, class Storage, const bool isClass>
 const  Cell& Map<Cell,Storage,isClass>::cell(const Point& p) const {
-  IntPoint ip=world2map(p);
-  AccessibilityState s=m_storage.cellState(ip);
-  //if (! s&Inside) assert(0);
-  if (s&Allocated)	 
-    return m_storage.cell(ip);
-  return  m_unknown;
+	IntPoint ip=world2map(p);
+	AccessibilityState s=m_storage.cellState(ip);
+	//if (! s&Inside) assert(0);
+	if (s&Allocated)	 
+		return m_storage.cell(ip);
+	return  m_unknown;
 }
 
 
 //FIXME check why the last line of the map is corrupted.
 template <class Cell, class Storage, const bool isClass>
 DoubleArray2D* Map<Cell,Storage,isClass>::toDoubleArray() const{
-        DoubleArray2D* darr=new DoubleArray2D(getMapSizeX()-1, getMapSizeY()-1);
+    DoubleArray2D* darr=new DoubleArray2D(getMapSizeX()-1, getMapSizeY()-1);
 	for(int x=0; x<getMapSizeX()-1; x++)
 		for(int y=0; y<getMapSizeY()-1; y++){
 			IntPoint p(x,y);
@@ -247,7 +290,7 @@ DoubleArray2D* Map<Cell,Storage,isClass>::toDoubleArray() const{
 template <class Cell, class Storage, const bool isClass>
 Map<double, DoubleArray2D, false>* Map<Cell,Storage,isClass>::toDoubleMap() const{
 //FIXME size the map so that m_center will be setted accordingly
-        Point pmin=map2world(IntPoint(0,0));
+    Point pmin=map2world(IntPoint(0,0));
 	Point pmax=map2world(getMapSizeX()-1,getMapSizeY()-1);
 	Point center=(pmax+pmin)*0.5;
 	Map<double, DoubleArray2D, false>*  plainMap=new Map<double, DoubleArray2D, false>(center, (pmax-pmin).x, (pmax-pmin).y, getDelta());

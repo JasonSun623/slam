@@ -1,0 +1,29 @@
+{
+    "configurations": [
+        {
+            "browse": {
+                "databaseFilename": "",
+                "limitSymbolsToIncludedHeaders": true
+            },
+            "includePath": [
+                "/home/tuannv/slam_ws/devel_isolated/csm/include/**",
+                "/opt/ros/melodic/include/**",
+                "/home/tuannv/slam_ws/src/slam/scan_tools/laser_ortho_projector/include/**",
+                "/home/tuannv/slam_ws/src/slam/scan_tools/laser_scan_matcher/include/**",
+                "/home/tuannv/slam_ws/src/slam/scan_tools/laser_scan_sparsifier/include/**",
+                "/home/tuannv/slam_ws/src/slam/scan_tools/laser_scan_splitter/include/**",
+                "/home/tuannv/slam_ws/src/slam/scan_tools/ncd_parser/include/**",
+                "/home/tuannv/slam_ws/src/slam/openslam_gmapping/include/**",
+                "/home/tuannv/slam_ws/src/slam/scan_tools/polar_scan_matcher/include/**",
+                "/home/tuannv/slam_ws/src/slam/scan_tools/scan_to_cloud_converter/include/**",
+                "/usr/include/**"
+            ],
+            "name": "ROS",
+            "intelliSenseMode": "gcc-x64",
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++17"
+        }
+    ],
+    "version": 4
+}

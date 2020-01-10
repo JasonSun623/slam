@@ -36,6 +36,12 @@
 int
 main(int argc, char** argv)
 {
+  // Set log level to debug
+  if (ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug))
+  {
+    ros::console::notifyLoggerLevelsChanged();
+  }
+
   ros::init(argc, argv, "slam_gmapping");
 
   SlamGMapping gn;

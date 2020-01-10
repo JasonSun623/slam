@@ -14,9 +14,9 @@ class RangeSensor: public Sensor{
 	public:
 		struct Beam{
 			OrientedPoint pose;	//pose relative to the center of the sensor
-			double span;	//spam=0 indicates a line-like beam
+			double span;		//spam=0 indicates a line-like beam
 			double maxRange;	//maximum range of the sensor
-			double s,c;		//sinus and cosinus of the beam (optimization);
+			double s,c;			//sinus and cosinus of the beam (optimization);
 		};	
 		RangeSensor(std::string name);
 		RangeSensor(std::string name, unsigned int beams, double res, const OrientedPoint& position=OrientedPoint(0,0,0), double span=0, double maxrange=89.0);
@@ -29,7 +29,6 @@ class RangeSensor: public Sensor{
 		OrientedPoint m_pose;
 		std::vector<Beam> m_beams;
 };
-
 };
 
 #endif

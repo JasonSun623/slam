@@ -62,41 +62,47 @@ class SlamGMapping
     void publishLoop(double transform_publish_period);
 
   private:
+    // ROS related object
     ros::NodeHandle node_;
     ros::Publisher entropy_publisher_;
-    ros::Publisher sst_;
-    ros::Publisher sstm_;
+    ros::Publisher sst_;  // Map publisher
+    ros::Publisher sstm_; // Map metadata publisher
     ros::ServiceServer ss_;
     tf::TransformListener tf_;
     message_filters::Subscriber<sensor_msgs::LaserScan>* scan_filter_sub_;
     tf::MessageFilter<sensor_msgs::LaserScan>* scan_filter_;
-    tf::TransformBroadcaster* tfB_;
+    tf::TransformBroadcaster* tfB_; // Transform broadcaster
 
-    GMapping::GridSlamProcessor* gsp_;
-    GMapping::RangeSensor* gsp_laser_;
+    GMapping::RangeSensor* gsp_laser_;    // Range sensor object
+    GMapping::OdometrySensor* gsp_odom_;  // Odemetry sensor object
+    GMapping::GridSlamProcessor* gsp_;    // Main processor object
+
     // The angles in the laser, going from -x to x (adjustment is made to get the laser between
     // symmetrical bounds as that's what gmapping expects)
     std::vector<double> laser_angles_;
+
     // The pose, in the original laser frame, of the corresponding centered laser with z facing up
     tf::Stamped<tf::Pose> centered_laser_pose_;
+
     // Depending on the order of the elements in the scan and the orientation of the scan frame,
     // We might need to change the order of the scan
     bool do_reverse_range_;
-    unsigned int gsp_laser_beam_count_;
-    GMapping::OdometrySensor* gsp_odom_;
+    unsigned int gsp_laser_beam_count_; // Number of beams per scan
 
-    bool got_first_scan_;
 
-    bool got_map_;
-    nav_msgs::GetMap::Response map_;
+    bool got_first_scan_;             // first scan flag
+
+    bool got_map_;                    // Got first map flag
+    nav_msgs::GetMap::Response map_;  // Map message
 
     ros::Duration map_update_interval_;
     tf::Transform map_to_odom_;
-    boost::mutex map_to_odom_mutex_;
-    boost::mutex map_mutex_;
 
-    int laser_count_;
-    int throttle_scans_;
+    boost::mutex map_to_odom_mutex_; // map to odom mutex
+    boost::mutex map_mutex_; // map access mutex
+
+    int laser_count_;     // Count number of received laser message
+    int throttle_scans_;  // Process 1 out of every this many scans
 
     boost::thread* transform_thread_;
 
@@ -112,9 +118,11 @@ class SlamGMapping
     double computePoseEntropy();
     
     // Parameters used by GMapping
-    double maxRange_;
-    double maxUrange_;
+    // set maxUrange < maximum range of the real sensor <= maxRange.
+    double maxRange_;             // The maximum range of the sensor.
+    double maxUrange_;            // The maximum usable range of the laser. A beam is cropped to this value.
     double maxrange_;
+
     double minimum_score_;
     double sigma_;
     int kernelSize_;
@@ -128,10 +136,14 @@ class SlamGMapping
     double srt_;
     double str_;
     double stt_;
+
+    //  process a scan only if the robot has traveled a given distance or a certain amount of time has elapsed
     double linearUpdate_;
     double angularUpdate_;
     double temporalUpdate_;
-    double resampleThreshold_;
+
+    double resampleThreshold_;  // update if (m_neff<m_resampleThreshold*m_particles.size())
+
     int particles_;
     double xmin_;
     double ymin_;
@@ -148,6 +160,8 @@ class SlamGMapping
     
     unsigned long int seed_;
     
+    // How long (in seconds) between transform publications. To disable broadcasting transforms, set to 0.
     double transform_publish_period_;
+
     double tf_delay_;
 };
