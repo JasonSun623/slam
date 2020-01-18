@@ -7,10 +7,7 @@
 
 namespace GMapping {
 
-
-
-OrientedPoint 
-MotionModel::drawFromMotion (const OrientedPoint& p, double linearMove, double angularMove) const{
+OrientedPoint MotionModel::drawFromMotion (const OrientedPoint& p, double linearMove, double angularMove) const{
 	OrientedPoint n(p);
 	double lm=linearMove  + fabs( linearMove ) * sampleGaussian( srr ) + fabs( angularMove ) * sampleGaussian( str );
 	double am=angularMove + fabs( linearMove ) * sampleGaussian( srt ) + fabs( angularMove ) * sampleGaussian( stt );
@@ -21,8 +18,7 @@ MotionModel::drawFromMotion (const OrientedPoint& p, double linearMove, double a
 	return n;
 }
 
-OrientedPoint 
-MotionModel::drawFromMotion(const OrientedPoint& p, const OrientedPoint& pnew, const OrientedPoint& pold) const{
+OrientedPoint MotionModel::drawFromMotion(const OrientedPoint& p, const OrientedPoint& pnew, const OrientedPoint& pold) const{
 	double sxy=0.3*srr;
 	OrientedPoint delta=absoluteDifference(pnew, pold);
 	OrientedPoint noisypoint(delta);

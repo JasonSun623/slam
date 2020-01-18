@@ -4,25 +4,29 @@
 #define isnan(x) (x==FP_NAN)
 #endif
 
+#include <iostream>
+
 /**Just scan match every single particle.
 If the scan matching fails, the particle gets a default likelihood.*/
 inline void GridSlamProcessor::scanMatch(const double* plainReading){
+  std::cout <<  "--------------------" << std::endl;
+  std::cout <<  __PRETTY_FUNCTION__ << std::endl;
   // sample a new pose from each scan in the reference
-  
   double sumScore=0;
   for (ParticleVector::iterator it=m_particles.begin(); it!=m_particles.end(); it++){
     OrientedPoint corrected;
     double score, l, s;
+    std::cout <<  "particle: " << *it << std::endl;
     score=m_matcher.optimize(corrected, it->map, it->pose, plainReading);
     //    it->pose=corrected;
     if (score>m_minimumScore){
       it->pose=corrected;
     } else {
-	if (m_infoStream){
-	  m_infoStream << "Scan Matching Failed, using odometry. Likelihood=" << l <<std::endl;
-	  m_infoStream << "lp:" << m_lastPartPose.x << " "  << m_lastPartPose.y << " "<< m_lastPartPose.theta <<std::endl;
-	  m_infoStream << "op:" << m_odoPose.x << " " << m_odoPose.y << " "<< m_odoPose.theta <<std::endl;
-	}
+	    if (m_infoStream){
+	      m_infoStream << "Scan Matching Failed, using odometry. Likelihood=" << l <<std::endl;
+	      m_infoStream << "lp:" << m_lastPartPose.x << " "  << m_lastPartPose.y << " "<< m_lastPartPose.theta <<std::endl;
+	      m_infoStream << "op:" << m_odoPose.x << " " << m_odoPose.y << " "<< m_odoPose.theta <<std::endl;
+  	  }
     }
 
     m_matcher.likelihoodAndScore(s, l, it->map, it->pose, plainReading);
@@ -64,7 +68,7 @@ inline void GridSlamProcessor::normalize(){
     m_neff+=w*w;
   }
   m_neff=1./m_neff;
-  
+   
 }
 
 inline bool GridSlamProcessor::resample(const double* plainReading, int adaptSize, const RangeReading* reading){

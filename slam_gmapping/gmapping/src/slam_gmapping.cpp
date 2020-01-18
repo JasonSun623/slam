@@ -553,8 +553,15 @@ SlamGMapping::initMapper(const sensor_msgs::LaserScan& scan)
   return true;
 }
 
-bool
-SlamGMapping::addScan(const sensor_msgs::LaserScan& scan, GMapping::OrientedPoint& gmap_pose)
+/**
+ * @brief  Collect distance scan data and odometer data for the mapping engine to update the particle collection
+ * 
+ * @param scan Scan data of the sensor
+ * @param gmap_pose Position of laser in odometry 
+ * @return true 
+ * @return false 
+ */
+bool SlamGMapping::addScan(const sensor_msgs::LaserScan& scan, GMapping::OrientedPoint& gmap_pose)
 {
   // Check if 
   if(!getOdomPose(gmap_pose, scan.header.stamp))
@@ -636,7 +643,9 @@ void SlamGMapping::laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 
   GMapping::OrientedPoint odom_pose; // pose of laser frame in odometry frame
 
-  // Add scan data and get odom pose
+  // The job of addScan is to collect distance scan data and odometer data 
+  // for the mapping engine to update the particle collection
+  // addScan return odom_pose which is the pose of laser in odometry frame
   if(addScan(*scan, odom_pose))
   {
     ROS_DEBUG("scan processed");
@@ -647,12 +656,16 @@ void SlamGMapping::laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
     ROS_DEBUG("correction: %.3f %.3f %.3f", mpose.x - odom_pose.x, mpose.y - odom_pose.y, mpose.theta - odom_pose.theta);
 
     // pose of map frame in laser frame
-    tf::Transform laser_to_map = tf::Transform(tf::createQuaternionFromRPY(0, 0, mpose.theta), tf::Vector3(mpose.x, mpose.y, 0.0)).inverse();
-    tf::Transform odom_to_laser = tf::Transform(tf::createQuaternionFromRPY(0, 0, odom_pose.theta), tf::Vector3(odom_pose.x, odom_pose.y, 0.0));
+    // tf::Transform laser_to_map = tf::Transform(tf::createQuaternionFromRPY(0, 0, mpose.theta), tf::Vector3(mpose.x, mpose.y, 0.0)).inverse();
+    // tf::Transform odom_to_laser = tf::Transform(tf::createQuaternionFromRPY(0, 0, odom_pose.theta), tf::Vector3(odom_pose.x, odom_pose.y, 0.0));
+
+    tf::Transform map_to_laser = tf::Transform(tf::createQuaternionFromRPY(0, 0, mpose.theta), tf::Vector3(mpose.x, mpose.y, 0.0));
+    tf::Transform laser_to_odom = tf::Transform(tf::createQuaternionFromRPY(0, 0, odom_pose.theta), tf::Vector3(odom_pose.x, odom_pose.y, 0.0)).inverse();
 
     // update transform
     map_to_odom_mutex_.lock();
-    map_to_odom_ = (odom_to_laser * laser_to_map).inverse();
+    // map_to_odom_ = (odom_to_laser * laser_to_map).inverse();
+    map_to_odom_ = map_to_laser * laser_to_odom;
     map_to_odom_mutex_.unlock();
     
     // update map if got new map or timeout
@@ -687,29 +700,37 @@ double SlamGMapping::computePoseEntropy()
   return -entropy;
 }
 
+/**
+ * @brief Update the occupation probability of each unit in the final raster map according to the map data of the optimal particle.
+ * 
+ * @param scan 
+ */
 void SlamGMapping::updateMap(const sensor_msgs::LaserScan& scan)
 {
   ROS_DEBUG("Update map");
   boost::mutex::scoped_lock map_lock (map_mutex_);
 
+  // Build a new scan matcher and configure the parameters
   GMapping::ScanMatcher matcher;
-
   matcher.setLaserParameters(scan.ranges.size(), &(laser_angles_[0]),
                              gsp_laser_->getPose());
-
   matcher.setlaserMaxRange(maxRange_);
   matcher.setusableRange(maxUrange_);
   matcher.setgenerateMap(true);
 
+  // Get the optimal particles from the mapping engine
   GMapping::GridSlamProcessor::Particle best =
           gsp_->getParticles()[gsp_->getBestParticleIndex()];
   
-  // Publish entropy
+  // Traverse the particle set to calculate the entropy, published by the publisher entroy_publisher_.
   std_msgs::Float64 entropy;
   entropy.data = computePoseEntropy();
   if(entropy.data > 0.0)
     entropy_publisher_.publish(entropy);
 
+  // Start building a map message. 
+  // It records whether a map has been built through the member variable got_map_
+  // and if not, gives the map information an initial value.
   if(!got_map_) {
     map_.map.info.resolution = delta_;
     map_.map.info.origin.position.x = 0.0;
@@ -721,14 +742,14 @@ void SlamGMapping::updateMap(const sensor_msgs::LaserScan& scan)
     map_.map.info.origin.orientation.w = 1.0;
   } 
 
+  // Create a scan-match map object smap according to the map center, 
   GMapping::Point center;
   center.x=(xmin_ + xmax_) / 2.0;
   center.y=(ymin_ + ymax_) / 2.0;
-
   GMapping::ScanMatcherMap smap(center, xmin_, ymin_, xmax_, ymax_, 
                                 delta_);
 
-  // Print out trajectory tree from best particle
+  // Traverse the trajectory tree of the optimal particle, and calculate the active area to update the map.
   ROS_DEBUG("Trajectory tree:");
   for(GMapping::GridSlamProcessor::TNode* n = best.node;
       n;
@@ -743,12 +764,14 @@ void SlamGMapping::updateMap(const sensor_msgs::LaserScan& scan)
       ROS_DEBUG("Reading is NULL");
       continue;
     }
-    matcher.invalidateActiveArea();
-    matcher.computeActiveArea(smap, n->pose, &((*n->reading)[0]));
+
+    matcher.invalidateActiveArea(); // Disable active area
+    matcher.computeActiveArea(smap, n->pose, &((*n->reading)[0])); // Enable new active area
     matcher.registerScan(smap, n->pose, &((*n->reading)[0]));
   }
 
-  // the map may have expanded, so resize ros message as well
+  // map may expand as the exploration area increases, 
+  // and the map information needs to be updated.
   if(map_.map.info.width != (unsigned int) smap.getMapSizeX() || map_.map.info.height != (unsigned int) smap.getMapSizeY()) {
 
     // NOTE: The results of ScanMatcherMap::getSize() are different from the parameters given to the constructor
@@ -770,7 +793,11 @@ void SlamGMapping::updateMap(const sensor_msgs::LaserScan& scan)
     ROS_DEBUG("map origin: (%f, %f)", map_.map.info.origin.position.x, map_.map.info.origin.position.y);
   }
 
-  // copy smap to map_ message
+  // the map is divided into 
+  //  - occupied areas (corresponding to a grid value of 100), 
+  //  - free areas (corresponding to a grid value of 0)
+  //  - unknown areas (corresponding to a grid value of -1) 
+  // according to the occupation probability threshold occ_thresh_
   for(int x=0; x < smap.getMapSizeX(); x++)
   {
     for(int y=0; y < smap.getMapSizeY(); y++)
@@ -790,13 +817,15 @@ void SlamGMapping::updateMap(const sensor_msgs::LaserScan& scan)
         map_.map.data[MAP_IDX(map_.map.info.width, x, y)] = 0;
     }
   }
+
+  // Final mark map has been constructed, timestamp the map message, and publish it.
   got_map_ = true;
 
   //make sure to set the header information on the map
   map_.map.header.stamp = ros::Time::now();
-  map_.map.header.frame_id = tf_.resolve( map_frame_ );
+  map_.map.header.frame_id = tf_.resolve(map_frame_);
 
-  // publish new map
+  // publish new map and map information
   sst_.publish(map_.map);
   sstm_.publish(map_.map.info);
 }

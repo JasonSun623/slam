@@ -1,6 +1,8 @@
 #ifndef GRIDSLAMPROCESSOR_H
 #define GRIDSLAMPROCESSOR_H
 
+#include <iostream>
+
 #include <climits>
 #include <limits>
 #include <fstream>
@@ -53,7 +55,8 @@ namespace GMapping {
        also the parent node is deleted. This because the parent will not be reacheable anymore in the trajectory tree.*/
       ~TNode();
 
-      /**The pose of the robot*/
+      /**The pose of the robot*/ 
+      // Records the particle's pose 
       OrientedPoint pose; 
       
       /**The weight of the particle*/
@@ -63,7 +66,6 @@ namespace GMapping {
       double accWeight;
 
       double gweight;
-
 
       /**The parent*/
       TNode* parent;
@@ -87,42 +89,49 @@ namespace GMapping {
     /**This class defines a particle of the filter. Each particle has a map, a pose, a weight and retains the current node in the trajectory tree*/
     struct Particle{
       /**constructs a particle, given a map
-	 @param map: the particle map
+	    @param map: the particle map
       */
       Particle(const ScanMatcherMap& map);
 
       /** @returns the weight of a particle */
       inline operator double() const {return weight;}
+
       /** @returns the pose of a particle */
       inline operator OrientedPoint() const {return pose;}
+
       /** sets the weight of a particle
-	  @param w the weight
+	    @param w the weight
       */
       inline void setWeight(double w) {weight=w;}
+
       /** The map */
       ScanMatcherMap map;
       /** The pose of the robot */
       OrientedPoint pose;
-
       /** The pose of the robot at the previous time frame (used for computing thr odometry displacements) */
       OrientedPoint previousPose;
 
       /** The weight of the particle */
       double weight;
-
       /** The cumulative weight of the particle */
       double weightSum;
-
       double gweight;
 
       /** The index of the previous particle in the trajectory tree */
       int previousIndex;
 
+      // TNode is a structure defined internally by GridSlamProcessor. 
+      // It is used for each particle to record the motion trajectory of the robot.
       /** Entry to the trajectory tree */
       TNode* node; 
+
+      friend std::ostream &operator << (std::ostream &out, const GridSlamProcessor::Particle &paricle)
+      {
+        out << "("<< paricle.pose << ": w=" << paricle.weight << ")";
+        return out;
+      }
     };
 	
-    
     typedef std::vector<Particle> ParticleVector;
     
     /** Constructs a GridSlamProcessor, initialized with the default parameters */
@@ -142,8 +151,21 @@ namespace GMapping {
     
     //methods for accessing the parameters
     void setSensorMap(const SensorMap& smap);
+
+    /**
+     * @brief 
+     * 
+     * @param size          Represents the number of particles 
+     * @param xmin          Describe the map size
+     * @param ymin          Describe the map size
+     * @param xmax          Describe the map size
+     * @param ymax          Describe the map size
+     * @param delta         Resolution or scale of the map, that is, the actual map size corresponding to a grid
+     * @param initialPose   Starting position of the robot
+     */
     void init(unsigned int size, double xmin, double ymin, double xmax, double ymax, double delta, 
 	      OrientedPoint initialPose=OrientedPoint(0,0,0));
+
     void setMatchingParameters(double urange, double range, double sigma, int kernsize, double lopt, double aopt, 
 			       int iterations, double likelihoodSigma=1, double likelihoodGain=1, unsigned int likelihoodSkip=0);
     void setMotionModelParameters(double srr, double srt, double str, double stt);
@@ -268,7 +290,8 @@ namespace GMapping {
     PARAM_SET_GET(double, resampleThreshold, protected, public, public);
       
     //state
-    int  m_count, m_readingCount;
+    int m_count;  // Counter of the iteration.  If the value is 0, it means that the current iteration is the first time
+    int m_readingCount;
     OrientedPoint m_lastPartPose;
     OrientedPoint m_odoPose;
     OrientedPoint m_pose;

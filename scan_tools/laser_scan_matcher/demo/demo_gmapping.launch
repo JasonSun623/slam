@@ -10,7 +10,7 @@ slam_gmapping
   <param name="/use_sim_time" value="true"/>
 
   <node pkg="rosbag" type="play" name="play" 
-    args="$(find laser_scan_matcher)/demo/demo.bag --delay=5 --clock"/>
+    args="$(find laser_scan_matcher)/demo/demo.bag --delay=1 --clock"/>
 
   #### publish an example base_link -> laser transform ###########
 
@@ -41,7 +41,7 @@ slam_gmapping
     <param name="kernelSize" value="1"/>
     <param name="lstep" value="0.15"/>
     <param name="astep" value="0.15"/>
-    <param name="iterations" value="1"/>
+    <param name="iterations" value="20"/>
     <param name="lsigma" value="0.1"/>
     <param name="ogain" value="3.0"/>
     <param name="lskip" value="1"/>

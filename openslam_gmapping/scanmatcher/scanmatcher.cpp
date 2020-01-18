@@ -113,6 +113,14 @@ void ScanMatcher::computeActiveArea(ScanMatcherMap& map, const OrientedPoint& p,
 	m_activeAreaComputed=true;
 }
 */
+
+/**
+ * @brief Records the area that needs to be updated
+ * 
+ * @param map 		Map that needs to be updated
+ * @param p 		The state of the robot recorded by the particles
+ * @param readings 	Record the scan value of the laser sensor
+ */
 void ScanMatcher::computeActiveArea(ScanMatcherMap& map, const OrientedPoint& p, const double* readings){
 	if (m_activeAreaComputed)
 		return;
@@ -212,6 +220,14 @@ void ScanMatcher::computeActiveArea(ScanMatcherMap& map, const OrientedPoint& p,
 	m_activeAreaComputed=true;
 }
 
+/**
+ * @brief Actually write the scanned occupancy information to the map
+ * 
+ * @param map 
+ * @param p 
+ * @param readings 
+ * @return double 
+ */
 double ScanMatcher::registerScan(ScanMatcherMap& map, const OrientedPoint& p, const double* readings){
 	if (!m_activeAreaComputed)
 		computeActiveArea(map, p, readings);
@@ -346,16 +362,16 @@ double ScanMatcher::optimize(OrientedPoint& pnew, const ScanMatcherMap& map, con
 		cout << readings[i] << " ";
 	}
 	cout << endl;
-*/	int c_iterations=0;
+*/	
+	int c_iterations=0;
 	do{
 		if (bestScore>=currentScore){
 			refinement++;
 			adelta*=.5;
 			ldelta*=.5;
 		}
+		
 		bestScore=currentScore;
-//		cout <<"score="<< currentScore << " refinement=" << refinement;
-//		cout <<  "pose=" << currentPose.x  << " " << currentPose.y << " " << currentPose.theta << endl;
 		OrientedPoint bestLocalPose=currentPose;
 		OrientedPoint localPose=currentPose;
 
@@ -410,11 +426,14 @@ double ScanMatcher::optimize(OrientedPoint& pnew, const ScanMatcherMap& map, con
 			c_iterations++;
 		} while(move!=Done);
 		currentPose=bestLocalPose;
-//		cout << "currentScore=" << currentScore<< endl;
+
+		cout <<  "pose=" << currentPose.x  << " " << currentPose.y << " " << currentPose.theta << endl;
+		cout <<"score="<< currentScore << " refinement=" << refinement << endl;
+		
 		//here we look for the best move;
 	}while (currentScore>bestScore || refinement<m_optRecursiveIterations);
-	//cout << __PRETTY_FUNCTION__ << "bestScore=" << bestScore<< endl;
-	//cout << __PRETTY_FUNCTION__ << "iterations=" << c_iterations<< endl;
+	cout << __PRETTY_FUNCTION__ << " ----> bestScore = " << bestScore<< endl;
+	cout << __PRETTY_FUNCTION__ << " ----> iterations = " << c_iterations<< endl;
 	pnew=currentPose;
 	return bestScore;
 }
@@ -445,11 +464,11 @@ double ScanMatcher::optimize(OrientedPoint& _mean, ScanMatcher::CovarianceMatrix
 			adelta*=.5;
 			ldelta*=.5;
 		}
-		bestScore=currentScore;
-//		cout <<"score="<< currentScore << " refinement=" << refinement;
-//		cout <<  "pose=" << currentPose.x  << " " << currentPose.y << " " << currentPose.theta << endl;
-		OrientedPoint bestLocalPose=currentPose;
-		OrientedPoint localPose=currentPose;
+		bestScore=currentScore; 				 	// record the current optimal matching degree
+		OrientedPoint bestLocalPose=currentPose; 	// record the current optimal node.
+		OrientedPoint localPose=currentPose;		// local variable used to traverse neighboring nodes around the current node	
+		// cout <<"score="<< currentScore << " refinement=" << refinement;
+		// cout <<  "pose=" << currentPose.x  << " " << currentPose.y << " " << currentPose.theta << endl;
 
 		Move move=Front;
 		do {
@@ -497,17 +516,20 @@ double ScanMatcher::optimize(OrientedPoint& _mean, ScanMatcher::CovarianceMatrix
 			localScore=odo_gain*score(map, localPose, readings);
 			//update the score
 			count++;
+
 			matched=likelihoodAndScore(localScore, localLikelihood, map, localPose, readings);
 			if (localScore>currentScore){
 				currentScore=localScore;
 				bestLocalPose=localPose;
 			}
+			
 			sm.score=localScore;
 			sm.likelihood=localLikelihood;//+log(odo_gain);
 			sm.pose=localPose;
 			moveList.push_back(sm);
 			//update the move list
 		} while(move!=Done);
+
 		currentPose=bestLocalPose;
 		//cout << __PRETTY_FUNCTION__ << "currentScore=" << currentScore<< endl;
 		//here we look for the best move;

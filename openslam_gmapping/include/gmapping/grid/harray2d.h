@@ -10,11 +10,14 @@ namespace GMapping {
 template <class Cell>
 class HierarchicalArray2D: public Array2D<autoptr< Array2D<Cell> > >{
 	public:
+		
 		typedef std::set< point<int>, pointcomparator<int> > PointSet;
+
 		HierarchicalArray2D(int xsize, int ysize, int patchMagnitude=5);
 		HierarchicalArray2D(const HierarchicalArray2D& hg);
 		HierarchicalArray2D& operator=(const HierarchicalArray2D& hg);
 		virtual ~HierarchicalArray2D(){}
+		
 		void resize(int ixmin, int iymin, int ixmax, int iymax);
 		inline int getPatchSize() const {return m_patchMagnitude;}
 		inline int getPatchMagnitude() const {return m_patchMagnitude;}
@@ -36,7 +39,7 @@ class HierarchicalArray2D: public Array2D<autoptr< Array2D<Cell> > >{
 		inline void allocActiveArea();
 	protected:
 		virtual Array2D<Cell> * createPatch(const IntPoint& p) const;
-		PointSet m_activeArea;
+		PointSet m_activeArea; // Record active area (mask) of the map 
 		int m_patchMagnitude;
 		int m_patchSize;
 };

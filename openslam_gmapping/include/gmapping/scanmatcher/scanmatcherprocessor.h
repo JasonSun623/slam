@@ -11,14 +11,14 @@ namespace GMapping {
 
 class ScanMatcherProcessor{
 	public:
-  ScanMatcherProcessor(const ScanMatcherMap& m);
-  ScanMatcherProcessor (double xmin, double ymin, double xmax, double ymax, double delta, double patchdelta);
+  		ScanMatcherProcessor(const ScanMatcherMap& m);
+  		ScanMatcherProcessor (double xmin, double ymin, double xmax, double ymax, double delta, double patchdelta);
 		virtual ~ScanMatcherProcessor ();
 		virtual void processScan(const RangeReading & reading);
 		void setSensorMap(const SensorMap& smap, std::string sensorName="FLASER");
 		void init();
-		void setMatchingParameters
-			(double urange, double range, double sigma, int kernsize, double lopt, double aopt, int iterations, bool computeCovariance=false);
+		void setMatchingParameters(double urange, double range, double sigma, int kernsize, 
+									double lopt, double aopt, int iterations, bool computeCovariance=false);
 		void setRegistrationParameters(double regScore, double critScore);
 		OrientedPoint getPose() const;
 		inline const ScanMatcherMap& getMap() const {return m_map;}

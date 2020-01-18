@@ -309,6 +309,7 @@ double ScanMatcher::optimize(OrientedPoint& _mean, ScanMatcher::CovarianceMatrix
 		it->likelihood=exp(it->likelihood-lmax);
 		//cout << "l=" << it->likelihood << endl;
 	}
+
 	//compute the mean
 	OrientedPoint mean(0,0,0);
 	double lacc=0;
@@ -337,7 +338,7 @@ double ScanMatcher::optimize(OrientedPoint& _mean, ScanMatcher::CovarianceMatrix
 	return bestScore;
 }
 
-	void ScanMatcher::setLaserParameters
+void ScanMatcher::setLaserParameters
 	(unsigned int beams, double* angles, const OrientedPoint& lpose){
 	if (m_laserAngles)
 		delete [] m_laserAngles;
@@ -348,10 +349,9 @@ double ScanMatcher::optimize(OrientedPoint& _mean, ScanMatcher::CovarianceMatrix
 }
 	
 
-double ScanMatcher::likelihood
-	(double& _lmax, OrientedPoint& _mean, CovarianceMatrix& _cov, const ScanMatcherMap& map, const OrientedPoint& p, const double* readings){
+double ScanMatcher::likelihood(double& _lmax, OrientedPoint& _mean, CovarianceMatrix& _cov, const ScanMatcherMap& map, 
+								const OrientedPoint& p, const double* readings){
 	ScoredMoveList moveList;
-	
 	
 	for (double xx=-m_llsamplerange; xx<=m_llsamplerange; xx+=m_llsamplestep)
 	for (double yy=-m_llsamplerange; yy<=m_llsamplerange; yy+=m_llsamplestep)

@@ -100,16 +100,16 @@ void ScanMatcherProcessor::processScan(const RangeReading & reading){
 	dPose.y=s*move.x+c*move.y;
 	dPose.theta=move.theta;
 
-#ifdef SCANMATHCERPROCESSOR_DEBUG
+	#ifdef SCANMATHCERPROCESSOR_DEBUG
 	cout << "abs-move x="<< dPose.x <<  " y=" << dPose.y << " theta=" << dPose.theta << endl;
-#endif
+	#endif
+
 	m_pose=m_pose+dPose;
 	m_pose.theta=atan2(sin(m_pose.theta), cos(m_pose.theta));
 
-#ifdef SCANMATHCERPROCESSOR_DEBUG
-	cout << "StartPose: x="
-	<< m_pose.x << " y=" << m_pose.y << " theta=" << m_pose.theta << endl;
-#endif
+	#ifdef SCANMATHCERPROCESSOR_DEBUG
+	cout << "StartPose: x=" << m_pose.x << " y=" << m_pose.y << " theta=" << m_pose.theta << endl;
+	#endif
 
 	m_odoPose=relPose; //update the past pose for the next iteration
 
@@ -118,25 +118,26 @@ void ScanMatcherProcessor::processScan(const RangeReading & reading){
 	//while the offset of the laser has to be taken into account
 	
 	assert(reading.size()==m_beams);
-/*	
-	double * plainReading = new double[m_beams];
-#ifdef SCANMATHCERPROCESSOR_DEBUG
-	cout << "PackedReadings ";
-#endif
-	for(unsigned int i=0; i<m_beams; i++){
-		plainReading[i]=reading[i];
-#ifdef SCANMATHCERPROCESSOR_DEBUG
-		cout << plainReading[i] << " ";
-#endif
-	}
-*/
+	/*	
+		double * plainReading = new double[m_beams];
+	#ifdef SCANMATHCERPROCESSOR_DEBUG
+		cout << "PackedReadings ";
+	#endif
+		for(unsigned int i=0; i<m_beams; i++){
+			plainReading[i]=reading[i];
+	#ifdef SCANMATHCERPROCESSOR_DEBUG
+			cout << plainReading[i] << " ";
+	#endif
+		}
+	*/
 	double * plainReading = new double[m_beams];
 	reading.rawView(plainReading, m_map.getDelta());
 	
 	
-#ifdef SCANMATHCERPROCESSOR_DEBUG
+	#ifdef SCANMATHCERPROCESSOR_DEBUG
 	cout << endl;
-#endif
+	#endif
+
 	//the final stuff: scan match the pose
 	double score=0;
 	OrientedPoint newPose=m_pose;
@@ -167,10 +168,10 @@ void ScanMatcherProcessor::processScan(const RangeReading & reading){
 
 			//gsl_eigen_symmv (m, eval,  evec, m_eigenspace);
                         eigen_decomposition(m,evec,eval);
-#ifdef SCANMATHCERPROCESSOR_DEBUG
+			#ifdef SCANMATHCERPROCESSOR_DEBUG
 			//cout << "evals=" << gsl_vector_get(eval, 0) <<  " " << gsl_vector_get(eval, 1)<< " " << gsl_vector_get(eval, 2)<<endl;
 			cout << "evals=" << eval[0] <<  " " << eval[1]<< " " << eval[2]<<endl;
-#endif
+			#endif
 			//gsl_matrix_free(m);
 			//gsl_matrix_free(evec);
 			//gsl_vector_free(eval);
@@ -186,28 +187,29 @@ void ScanMatcherProcessor::processScan(const RangeReading & reading){
 	}
 	//...and register the scan
 	if (!m_count || score<m_regScore){
-#ifdef SCANMATHCERPROCESSOR_DEBUG
+		#ifdef SCANMATHCERPROCESSOR_DEBUG
 		cout << "Registering" << endl;
-#endif
+		#endif
+
 		m_matcher.invalidateActiveArea();
 		if (score<m_critScore){
-#ifdef SCANMATHCERPROCESSOR_DEBUG
+			#ifdef SCANMATHCERPROCESSOR_DEBUG
 			cout << "New Scan added, using odo pose" << endl;
-#endif
+			#endif
 			m_matcher.registerScan(m_map, m_pose, plainReading);
 		} else {
 			m_matcher.registerScan(m_map, newPose, plainReading);
-#ifdef SCANMATHCERPROCESSOR_DEBUG
+			#ifdef SCANMATHCERPROCESSOR_DEBUG
 			cout << "New Scan added, using matched pose" << endl;
-#endif
+			#endif
 		}	
 	}
 
-#ifdef SCANMATHCERPROCESSOR_DEBUG
+	#ifdef SCANMATHCERPROCESSOR_DEBUG
 	cout << " FinalPose: x="
 		<< newPose.x << " y=" << newPose.y << " theta=" << newPose.theta << endl;
 	cout << "score=" << score << endl;
-#endif
+	#endif
 	m_pose=newPose;
 	delete [] plainReading;
 	m_count++;
@@ -223,11 +225,8 @@ void ScanMatcherProcessor::setRegistrationParameters(double regScore, double cri
 	m_regScore=regScore;
 	m_critScore=critScore;
 }
-		
 
-OrientedPoint ScanMatcherProcessor::getPose() const{
-	return m_pose;
-}
+OrientedPoint ScanMatcherProcessor::getPose() const{ return m_pose;}
 
 };
 

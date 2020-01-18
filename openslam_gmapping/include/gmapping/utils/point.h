@@ -44,7 +44,7 @@ inline T operator * (const point<T>& p1, const point<T>& p2){
 
 template <class T, class A>
 struct orientedpoint: public point<T>{
-  inline orientedpoint() : point<T>(0,0), theta(0) {};
+  	inline orientedpoint() : point<T>(0,0), theta(0) {};
 	inline orientedpoint(const point<T>& p);
 	inline orientedpoint(T x, T y, A _theta): point<T>(x,y), theta(_theta){}
         inline void normalize();
@@ -58,6 +58,12 @@ struct orientedpoint: public point<T>{
 			a);
 	}
 	A theta;
+	
+	friend std::ostream & operator << (std::ostream &out, const orientedpoint<T,A>& op)
+    {
+        out << "x=" << op.x << " y=" << op.y << " theta=" << op.theta;
+        return out;
+    }
 };
 
 
